@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recenzii24 | Platformă Premium pentru Recenzii Google</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Generează coduri QR premium, monitorizează click-urile în timp real și gestionează clienții pe WhatsApp. Platformă dedicată afacerilor mici din România.">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- QR Code Library CDN -->
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <!-- Supabase CDN pentru Baza de date Reală -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --primary: #2563EB;
+            --primary-hover: #1D4ED8;
+            --primary-light: #EFF6FF;
+            --primary-alpha: rgba(37, 99, 235, 0.1);
+            
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            --whatsapp: #25D366;
+
+            /* Light Theme Basics */
+            --bg-body: #F9FAFB;
+            --bg-surface: #FFFFFF;
+            --bg-surface-alt: #F3F4F6;
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --text-light: #9CA3AF;
+            
+            --border-color: #E5E7EB;
+            
+            /* Shadows & Radii */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.3);
+            
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #3B82F6;
+            --primary-hover: #60A5FA;
+            --primary-light: #1E3A8A;
+            --primary-alpha: rgba(59, 130, 246, 0.15);
+            
+            --bg-body: #030712;
+            --bg-surface: #111827;
+            --bg-surface-alt: #1F2937;
+            --bg-glass: rgba(17, 24, 39, 0.85);
+            
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --text-light: #6B7280;
+            
+            --border-color: #374151;
+            
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; transition: var(--transition); overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        img { max-width: 100%; display: block; }
+
+        /* Typography & Layout */
+        .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+        .section { padding: 100px 0; }
+        .text-center { text-align: center; }
+        .section-title { font-size: 2.75rem; font-weight: 800; margin-bottom: 1.25rem; color: var(--text-main); letter-spacing: -0.025em; }
+        .section-subtitle { font-size: 1.125rem; color: var(--text-muted); max-width: 650px; margin: 0 auto 3.5rem auto; line-height: 1.8; }
+        
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: var(--radius-md); font-weight: 600; font-size: 1rem; cursor: pointer; transition: var(--transition); border: 1px solid transparent; outline: none; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+        .btn-primary { background-color: var(--primary); color: #FFFFFF; box-shadow: var(--shadow-md); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        .btn-outline { background-color: transparent; color: var(--text-main); border-color: var(--border-color); }
+        .btn-outline:hover:not(:disabled) { background-color: var(--bg-surface-alt); border-color: var(--text-muted); }
+        .btn-sm { padding: 8px 16px; font-size: 0.875rem; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #DC2626; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-wa { background-color: var(--whatsapp); color: white; }
+        .btn-wa:hover { background-color: #1DA851; transform: translateY(-2px); }
+        .btn-info { background-color: var(--info); color: white; }
+
+        /* Forms & Inputs */
+        .form-group { margin-bottom: 1.5rem; position: relative; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background-color: var(--bg-surface); color: var(--text-main); font-family: inherit; font-size: 1rem; transition: var(--transition); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-alpha); }
+        select.form-control { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+        textarea.form-control { resize: vertical; min-height: 120px; }
+        
+        /* Advanced Color Picker */
+        .color-picker-wrapper { display: flex; align-items: center; gap: 10px; }
+        input[type="color"] { -webkit-appearance: none; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: var(--radius-md); cursor: pointer; padding: 0; background: var(--bg-surface); }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: var(--radius-sm); }
+
+        /* Navbar */
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; background-color: var(--bg-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); z-index: 1000; transition: var(--transition); }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; height: 75px; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; letter-spacing: -0.05em; }
+        .logo i { color: var(--primary); font-size: 1.75rem; }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-link { font-weight: 600; color: var(--text-muted); transition: var(--transition); font-size: 0.95rem; }
+        .nav-link:hover, .nav-link.active { color: var(--primary); }
+        .nav-actions { display: flex; gap: 16px; align-items: center; }
+        .theme-toggle { background: var(--bg-surface-alt); border: 1px solid var(--border-color); color: var(--text-main); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-full); cursor: pointer; transition: var(--transition); }
+        .theme-toggle:hover { background: var(--border-color); }
+        
+        /* Hero */
+        .hero { padding: 160px 0 100px 0; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 50px; align-items: center; }
+        .hero-content h1 { font-size: 4rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -0.03em; }
+        .hero-content h1 span { color: var(--primary); position: relative; }
+        .hero-content p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.7; }
+        
+        .hero-stats { display: flex; gap: 40px; margin-top: 3.5rem; padding-top: 2.5rem; border-top: 1px solid var(--border-color); }
+        .stat-item h4 { font-size: 1.75rem; font-weight: 800; color: var(--text-main); }
+        .stat-item p { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .mockup-card { background: var(--bg-surface); padding: 40px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); text-align: center; transform: perspective(1000px) rotateY(-15deg) rotateX(5deg); animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) translateY(0px); } 50% { transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) translateY(-20px); } }
+
+        /* SaaS Dashboard Layout */
+        .dashboard-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px; margin-top: 40px; }
+        .panel-card { background: var(--bg-surface); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; }
+        .panel-header { padding: 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface-alt); display: flex; justify-content: space-between; align-items: center; }
+        .panel-header h3 { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .panel-body { padding: 30px; flex: 1; }
+
+        /* Custom Tabs */
+        .tabs { display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; }
+        .tab-btn { padding: 10px 20px; border: none; background: transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: var(--transition); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Live Analytics Chart (Pure HTML/CSS) */
+        .chart-wrapper { width: 100%; height: 200px; margin-top: 30px; position: relative; }
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 160px; padding-top: 20px; border-bottom: 1px solid var(--border-color); gap: 10px; }
+        .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; cursor: pointer; }
+        .chart-bar { width: 100%; max-width: 40px; background: var(--primary-alpha); border-radius: 4px 4px 0 0; transition: var(--transition); position: relative; min-height: 2px; }
+        .chart-bar-fill { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; transition: height 1s cubic-bezier(0.4, 0, 0.2, 1); height: 0%; }
+        .chart-bar-group:hover .chart-bar-fill { background: var(--primary-hover); }
+        .chart-label { margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .chart-tooltip { position: absolute; top: -35px; background: var(--text-main); color: var(--bg-surface); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; z-index: 10; }
+        .chart-bar-group:hover .chart-tooltip { opacity: 1; }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .stat-box { background: var(--bg-surface-alt); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .stat-box i { font-size: 1.5rem; color: var(--primary); margin-bottom: 12px; }
+        .stat-box .value { font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1; margin-bottom: 4px; }
+        .stat-box .label { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+        .live-indicator { position: absolute; top: 20px; right: 20px; width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); animation: pulseLive 2s infinite; }
+        @keyframes pulseLive { 0% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.5; } }
+
+        /* Data Tables & Lists */
+        .data-toolbar { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; align-items: center; }
+        .search-box { position: relative; flex: 1; }
+        .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input { padding-left: 45px; }
+        
+        .history-list, .crm-list { display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto; padding-right: 5px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: var(--transition); }
+        .list-item:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .item-main h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+        .item-meta { display: flex; gap: 15px; font-size: 0.85rem; color: var(--text-muted); }
+        .meta-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface-alt); padding: 4px 10px; border-radius: var(--radius-full); font-weight: 600; }
+        .meta-pill.highlight { background: var(--primary-alpha); color: var(--primary); }
+        
+        /* QR Preview Container */
+        .qr-preview-box { background: var(--bg-surface-alt); padding: 30px; border-radius: var(--radius-lg); display: flex; justify-content: center; align-items: center; border: 2px dashed var(--border-color); min-height: 320px; transition: var(--transition); }
+        .qr-preview-box.has-qr { border-style: solid; border-color: var(--primary-alpha); background: var(--bg-surface); box-shadow: var(--shadow-md); }
+        #qr-canvas-target { background: #fff; padding: 10px; border-radius: 12px; box-shadow: var(--shadow-sm); }
+
+        /* Modals & Overlays */
+        .overlay-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-surface); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; display: none; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9999; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: var(--transition); }
+        .modal-backdrop.active { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--bg-surface); padding: 40px; border-radius: var(--radius-xl); width: 90%; max-width: 450px; text-align: center; transform: translateY(20px); transition: var(--transition); box-shadow: var(--shadow-lg); }
+        .modal-backdrop.active .modal-content { transform: translateY(0); }
+
+        /* Toasts */
+        .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 10000; display: flex; flex-direction: column; gap: 15px; }
+        .toast { background: var(--bg-surface); color: var(--text-main); padding: 16px 24px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--primary); transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); font-weight: 600; min-width: 300px; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+        .toast.info { border-color: var(--info); }
+        
+        /* Grid Layouts */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .feature-card { padding: 40px; background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--border-color); transition: var(--transition); }
+        .feature-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+        .feature-icon { width: 60px; height: 60px; background: var(--primary-alpha); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 20px; }
+        
+        /* Scroll animations */
+        .animate-up { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .animate-up.visible { opacity: 1; transform: translateY(0); }
+
+        /* Pricing */
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
+        .pricing-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 50px 40px; text-align: center; transition: var(--transition); }
+        .pricing-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+        .pricing-card.popular { border: 2px solid var(--primary); box-shadow: var(--shadow-lg); transform: scale(1.05); position: relative; background: linear-gradient(to bottom, var(--bg-surface), var(--primary-light)); }
+        .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+        .price { font-size: 3.5rem; font-weight: 800; color: var(--text-main); margin: 20px 0; }
+        .price span { font-size: 1.1rem; color: var(--text-muted); font-weight: 500; }
+        .pricing-features { text-align: left; margin: 30px 0; }
+        .pricing-features li { margin-bottom: 15px; display: flex; align-items: center; gap: 12px; color: var(--text-main); font-weight: 500; }
+        .pricing-features li i { color: var(--success); font-size: 1.2rem; }
+
+        /* FAQ */
+        .faq-list { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
+        .faq-item { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; transition: var(--transition); }
+        .faq-item:hover { border-color: var(--text-light); }
+        .faq-header { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 24px; background: none; border: none; font-size: 1.15rem; font-weight: 600; color: var(--text-main); cursor: pointer; text-align: left; transition: var(--transition); }
+        .faq-header i { transition: transform 0.3s ease; color: var(--text-muted); }
+        .faq-header.active i { transform: rotate(180deg); color: var(--primary); }
+        .faq-header.active { color: var(--primary); }
+        .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .faq-body { padding: 0 24px 24px 24px; color: var(--text-muted); line-height: 1.7; }
+
+        /* Footer */
+        .footer { background: var(--bg-surface-alt); border-top: 1px solid var(--border-color); padding: 80px 0 30px 0; margin-top: 60px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px; margin-bottom: 60px; }
+        .social-links { display: flex; gap: 15px; margin-top: 25px; }
+        .social-links a { width: 45px; height: 45px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-main); transition: var(--transition); font-size: 1.2rem; }
+        .social-links a:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-3px); }
+        .footer-links h4 { margin-bottom: 25px; font-size: 1.2rem; font-weight: 700; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: var(--text-muted); transition: var(--transition); font-weight: 500; }
+        .footer-links a:hover { color: var(--primary); padding-left: 5px; }
+        .copyright { text-align: center; padding-top: 30px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.95rem; }
+        
+        @media (max-width: 968px) {
+            .dashboard-layout, .hero, .footer-grid { grid-template-columns: 1fr; }
+            .hero { padding-top: 120px; text-align: center; }
+            .hero-content h1 { font-size: 2.5rem; }
+            .hero-stats { justify-content: center; flex-wrap: wrap; gap: 20px; }
+            .nav-links { display: none; }
+            
+            /* Optimizări speciale pentru Mobil (Alea mai micuțe) */
+            .panel-body, .feature-card, .pricing-card { padding: 20px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .list-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .list-item > div:last-child { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+            .btn { padding: 10px 16px; font-size: 0.95rem; }
+            .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+            .section-title { font-size: 2rem; }
+            .modal-content { width: 95%; padding: 25px; }
+            .qr-preview-box { min-height: 250px; padding: 15px; }
+            .color-picker-wrapper { flex-wrap: wrap; }
+            .data-toolbar form { flex-direction: column; align-items: stretch !important; }
+            .data-toolbar form button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAGIC REDIRECT OVERLAY (Triggered when processing a real scan) -->
+    <div id="redirect-overlay" class="overlay-fullscreen">
+        <div id="redirect-content">
+            <i class="fa-solid fa-satellite-dish fa-beat" style="font-size: 5rem; color: var(--primary); margin-bottom: 30px;"></i>
+            <h2 style="font-weight: 800; font-size: 2.5rem; color: var(--text-main);">Se înregistrează scanarea...</h2>
+            <p style="color: var(--text-muted); font-size: 1.2rem; margin-top: 15px;">Securizăm conexiunea și te redirecționăm către destinație.</p>
+            <div style="width: 200px; height: 4px; background: var(--border-color); margin: 20px auto; border-radius: 4px; overflow: hidden;">
+                <div style="width: 100%; height: 100%; background: var(--primary); animation: loadBar 1s ease-in-out forwards;"></div>
+            </div>
+        </div>
+        <style>@keyframes loadBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(0); } }</style>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo"><i class="fa-solid fa-star"></i> Recenzii24</a>
+            <ul class="nav-links">
+                <li><a href="#acasa" class="nav-link active">Acasă</a></li>
+                <li><a href="#platforma" class="nav-link">Platformă SaaS</a></li>
+                <li><a href="#functionalitati" class="nav-link">Funcționalități</a></li>
+                <li><a href="#preturi" class="nav-link">Prețuri</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" title="Schimbă Tema"><i class="fa-solid fa-moon"></i></button>
+                <a href="#platforma" class="btn btn-primary">Intră în Cont</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section id="acasa" class="hero container">
+        <div class="hero-content animate-up">
+            <h1>Obține recenzii pe Google pe <span>pilot automat.</span></h1>
+            <p>O platformă completă pentru afacerile locale. Generează coduri QR inteligente, urmărește scanările în timp real și gestionează clienții direct pe WhatsApp.</p>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <a href="#platforma" class="btn btn-primary" style="padding: 16px 32px; font-size: 1.1rem;">Pornește Platforma <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="#functionalitati" class="btn btn-outline" style="padding: 16px 32px; font-size: 1.1rem;">Află Mai Multe</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item"><h4>100%</h4><p>Tracking Real</p></div>
+                <div class="stat-item"><h4>Zero</h4><p>Abonament (MVP)</p></div>
+                <div class="stat-item"><h4>Nelimitat</h4><p>Campanii QR</p></div>
+            </div>
+        </div>
+        <div class="hero-visual animate-up" style="transition-delay: 0.2s;">
+            <div class="mockup-card">
+                <div style="background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 15px 35px rgba(0,0,0,0.1);">
+                    <i class="fa-brands fa-google" style="font-size: 4rem; color: #DB4437; margin-bottom: 25px;"></i>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #F59E0B; font-size: 2.2rem; margin-bottom: 25px;">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <h3 style="font-weight: 800; font-size: 1.6rem; color: #111827;">Excelent!</h3>
+                    <div style="width: 220px; height: 12px; background: #E5E7EB; border-radius: 10px; margin: 20px auto 10px auto;"></div>
+                    <div style="width: 160px; height: 12px; background: #E5E7EB; border-radius: 10px; margin: 0 auto;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SAAS PLATFORM SECTION -->
+    <section id="platforma" class="section" style="background: var(--bg-surface-alt);">
+        <div class="container">
+            <div class="text-center animate-up">
+                <h2 class="section-title">Control Panel & Live Analytics</h2>
+                <p class="section-subtitle">Aceasta este inima platformei tale. Creează, personalizează și monitorizează performanța în timp real.</p>
+            </div>
+
+            <div class="dashboard-layout">
+                
+                <!-- LEFT COLUMN: Generator & Settings -->
+                <div class="panel-card animate-up">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-sliders"></i> Configurator Campanie</h3>
+                        <button id="btn-reset-form" class="btn btn-outline btn-sm" title="Resetează formularul"><i class="fa-solid fa-plus"></i> Campanie Nouă</button>
+                    </div>
+                    <div class="panel-body">
+                        <!-- Navigation Tabs -->
+                        <div class="tabs">
+                            <button class="tab-btn active" data-tab="tab-basic">1. Date de Bază</button>
+                            <button class="tab-btn" data-tab="tab-design">2. Design QR</button>
+                            <button class="tab-btn" data-tab="tab-wa">3. WhatsApp</button>
+                        </div>
+
+                        <form id="campaign-form">
+                            <!-- Input hidden pentru ID-ul campaniei curente (daca se editeaza) -->
+                            <input type="hidden" id="camp-id" value="">
+
+                            <!-- Tab 1: Basic -->
+                            <div id="tab-basic" class="tab-content active">
+                                <div class="form-group">
+                                    <label class="form-label">Nume Campanie (Intern)</label>
+                                    <input type="text" id="biz-name" class="form-control" placeholder="Ex: QR Mese Terasa" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Link Destinație (Google Maps)</label>
+                                    <input type="url" id="biz-url" class="form-control" placeholder="https://g.page/r/..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Logo URL pe QR (Opțional)</label>
+                                    <input type="url" id="biz-logo" class="form-control" placeholder="https://site.ro/logo.png">
+                                    <small style="color: var(--text-light); margin-top: 5px; display: block;">Asigură-te că link-ul imaginii este public (ex: .png, .jpg).</small>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: Design -->
+                            <div id="tab-design" class="tab-content">
+                                <div style="margin-bottom: 25px; padding: 15px; background: var(--bg-surface-alt); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                                    <label class="form-label" style="margin-bottom: 10px;"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--warning);"></i> Modele Rapide (Templates)</label>
+                                    <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;" id="qr-templates-container">
+                                        <button type="button" class="btn btn-outline btn-sm" data-tpl="modern" style="white-space: nowrap; border-color: #2563EB; color: #2563EB;">Modern Blue</button>
+                                        <button type="button" class="btn btn-outline btn-sm" data-tpl="google" style="white-space: nowrap; border-color: #EA4335; color: #EA4335;">Google Style</button>
+                                        <button type="button" class="btn btn-outline btn-sm" data-tpl="elegant" style="white-space: nowrap; border-color: #111827; color: #111827;">Elegant Dark</button>
+                                        <button type="button" class="btn btn-outline btn-sm" data-tpl="whatsapp" style="white-space: nowrap; border-color: #25D366; color: #25D366;">WhatsApp Green</button>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Culoare Puncte</label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" id="qr-color-dots" value="#2563EB">
+                                            <span style="font-family: monospace; font-size: 0.9rem; font-weight: bold;" id="lbl-color-dots">#2563EB</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Culoare Fundal</label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" id="qr-color-bg" value="#ffffff">
+                                            <span style="font-family: monospace; font-size: 0.9rem; font-weight: bold;" id="lbl-color-bg">#FFFFFF</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Stil Puncte QR</label>
+                                        <select id="qr-style-dots" class="form-control">
+                                            <option value="rounded">Rotunjite (Modern)</option>
+                                            <option value="dots">Puncte Individuale</option>
+                                            <option value="square">Pătrate (Clasic)</option>
+                                            <option value="classy">Clasic Elegant</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Stil Margini (Ochi)</label>
+                                        <select id="qr-style-corners" class="form-control">
+                                            <option value="extra-rounded">Extra Rotunjit</option>
+                                            <option value="dot">Punct Circular</option>
+                                            <option value="square">Pătrat Standard</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: WhatsApp -->
+                            <div id="tab-wa" class="tab-content">
+                                <div class="form-group">
+                                    <label class="form-label">Șablon Mesaj WhatsApp</label>
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Acest text va fi folosit în modulul CRM. Eticheta <strong>[LINK]</strong> va fi înlocuită automat cu link-ul de tracking creat.</p>
+                                    <textarea id="wa-msg" class="form-control">Bună ziua! Vă mulțumim că ne-ați ales. Ne-ar ajuta enorm o recenzie pe Google! Apasă aici: [LINK]</textarea>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btn-submit-camp" class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 16px; font-size: 1.1rem;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Generează & Salvează Campanie
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Dashboard & Live Analytics -->
+                <div class="panel-card animate-up" style="transition-delay: 0.2s;">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-chart-line"></i> Analytics & Live View</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-config-cloud" class="btn btn-outline btn-sm" style="border-color: #8b5cf6; color: #8b5cf6;" title="Conectează Baza de Date"><i class="fa-solid fa-cloud"></i> Cloud API</button>
+                            <button id="btn-dl-qr" class="btn btn-outline btn-sm" disabled><i class="fa-solid fa-download"></i> PNG</button>
+                            <button id="btn-dl-svg" class="btn btn-outline btn-sm" disabled><i class="fa-solid fa-vector-square"></i> SVG</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="display: flex; flex-direction: column;">
+                        
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <div class="value" id="stat-total-camps">0</div>
+                                <div class="label">Campanii Active</div>
+                            </div>
+                            <div class="stat-box" style="border-color: var(--primary); background: var(--primary-alpha);">
+                                <div class="live-indicator" title="Sistemul ascultă în timp real"></div>
+                                <i class="fa-solid fa-mouse-pointer"></i>
+                                <div class="value" id="stat-total-clicks" style="color: var(--primary);">0</div>
+                                <div class="label" style="color: var(--primary); font-weight: 700;">Scanări Reale Înregistrate</div>
+                            </div>
+                        </div>
+
+                        <!-- Pure CSS/JS 7-Day Chart -->
+                        <div style="margin-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <h4 style="font-size: 1rem;">Activitate Ultimele 7 Zile</h4>
+                                <span style="font-size: 0.8rem; color: var(--success); font-weight: bold;"><i class="fa-solid fa-satellite-dish"></i> Live</span>
+                            </div>
+                            <div class="chart-wrapper">
+                                <div class="chart-container" id="activity-chart">
+                                    <!-- Bars injected via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- QR Live Preview Box -->
+                        <div id="visual-preview-area" class="qr-preview-box" style="margin-top: 30px;">
+                            <div style="text-align: center; color: var(--text-muted);" id="qr-placeholder-text">
+                                <i class="fa-solid fa-qrcode" style="font-size: 3rem; opacity: 0.3; margin-bottom: 10px;"></i>
+                                <p>Previzualizare Live QR</p>
+                            </div>
+                            <div id="qr-canvas-target" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BOTTOM SECTION: CRM & History Databases -->
+            <div class="panel-card animate-up" style="margin-top: 40px;">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-database"></i> Baze de Date Locale</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-export-csv" class="btn btn-success btn-sm"><i class="fa-solid fa-file-csv"></i> Exportă Raport (CSV)</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="db-campaigns"><i class="fa-solid fa-list-check"></i> Campanii QR</button>
+                        <button class="tab-btn" data-tab="db-crm"><i class="fa-solid fa-users"></i> Mini CRM (Clienți)</button>
+                    </div>
+
+                    <!-- Campaigns DB -->
+                    <div id="db-campaigns" class="tab-content active">
+                        <div class="data-toolbar">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="search-camps" class="form-control" placeholder="Caută campanie după nume...">
+                            </div>
+                        </div>
+                        <div class="history-list" id="campaigns-list">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+
+                    <!-- CRM DB -->
+                    <div id="db-crm" class="tab-content">
+                        <div class="data-toolbar" style="background: var(--bg-surface-alt); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                            <form id="crm-form" style="display: flex; gap: 15px; width: 100%; align-items: flex-end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label class="form-label">Nume Client</label>
+                                    <input type="text" id="crm-name" class="form-control" required placeholder="Ex: Ion Popescu">
+                                </div>
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label class="form-label">Telefon WhatsApp</label>
+                                    <input type="tel" id="crm-phone" class="form-control" required placeholder="07...">
+                                </div>
+                                <div style="flex: 1.5; min-width: 250px;">
+                                    <label class="form-label">Campanie Asignată</label>
+                                    <select id="crm-campaign-select" class="form-control" required>
+                                        <option value="">Alege campania creată...</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="height: 48px; padding: 0 30px;"><i class="fa-solid fa-plus"></i> Adaugă</button>
+                            </form>
+                        </div>
+                        <div class="crm-list" id="crm-list" style="margin-top: 20px;">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section id="functionalitati" class="section container animate-up">
+        <div class="text-center">
+            <h2 class="section-title">Tot ce ai nevoie, într-un singur loc</h2>
+            <p class="section-subtitle">O platformă robustă creată special pentru afacerile care vor să crească organic pe Google.</p>
+        </div>
+        <div class="features-grid" style="margin-top: 50px;">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                <h3>Tracking Real-Time</h3>
+                <p style="color: var(--text-muted); margin-top: 10px;">Link-urile trec printr-un filtru invizibil care înregistrează scanarea exact în momentul producerii, populând graficele live.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-palette"></i></div>
+                <h3>Design Personalizat</h3>
+                <p style="color: var(--text-muted); margin-top: 10px;">Ai control total asupra culorilor și formelor codului QR. Adaugă logo-ul afacerii pentru o identitate vizuală premium.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                <h3>CRM Integrat</h3>
+                <p style="color: var(--text-muted); margin-top: 10px;">Salvează datele clienților și trimite-le cereri de recenzie personalizate, la un click distanță, direct pe WhatsApp.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING SECTION -->
+    <section id="preturi" class="section container animate-up">
+        <div class="text-center">
+            <h2 class="section-title">Investiție Minimă. Profit Maxim.</h2>
+            <p class="section-subtitle">Algoritmul Google favorizează afacerile cu multe recenzii. Transformă fiecare client într-un ambasador.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>Gratuit (MVP)</h3>
+                <p style="color: var(--text-muted); margin-top: 10px;">Explorează platforma local</p>
+                <div class="price">0 lei<span> / lună</span></div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-check"></i> Generare QR Nelimitată</li>
+                    <li><i class="fa-solid fa-check"></i> Analytics Local în Timp Real</li>
+                    <li><i class="fa-solid fa-check"></i> Modul CRM WhatsApp</li>
+                    <li><i class="fa-solid fa-check"></i> Export Rapoarte CSV</li>
+                </ul>
+                <a href="#platforma" class="btn btn-outline" style="width: 100%;">Folosește Gratuit</a>
+            </div>
+            <div class="pricing-card popular">
+                <div class="popular-badge">Cel Mai Popular</div>
+                <h3>Premium Cloud</h3>
+                <p style="color: var(--text-muted); margin-top: 10px;">Pentru afaceri în creștere</p>
+                <div class="price">19 lei<span> / lună</span></div>
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-check"></i> Stocare Securizată în Cloud</li>
+                    <li><i class="fa-solid fa-check"></i> Acces de pe orice dispozitiv</li>
+                    <li><i class="fa-solid fa-check"></i> Link-uri Domeniu Personalizat</li>
+                    <li><i class="fa-solid fa-check"></i> Notificări Automate Email</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;" id="btn-upgrade-premium">Treci la Premium</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section id="faq" class="section" style="background: var(--bg-surface-alt);">
+        <div class="container animate-up">
+            <div class="text-center">
+                <h2 class="section-title">Întrebări Frecvente</h2>
+                <p class="section-subtitle">Clarificăm cele mai importante aspecte ale funcționării sistemului.</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-header">Cum funcționează tracking-ul în timp real? <i class="fa-solid fa-chevron-down"></i></button>
+                    <div class="faq-content">
+                        <div class="faq-body">Când un client scanează QR-ul tău, sistemul nostru interceptează conexiunea o fracțiune de secundă pentru a înregistra "click-ul" în baza ta de date locală, și apoi îl redirecționează automat către link-ul real de Google Maps. Astfel, tu știi exact câte persoane au vizitat pagina.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-header">Unde sunt salvate datele mele? <i class="fa-solid fa-chevron-down"></i></button>
+                    <div class="faq-content">
+                        <div class="faq-body">În această versiune Gratuită (MVP), absolut toate datele, inclusiv setările campaniilor și baza de date a clienților din CRM, sunt salvate securizat în memoria locală a browserului tău (LocalStorage). Ele nu pleacă pe niciun server extern, asigurând confidențialitate totală.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-header">Pot exporta datele pentru a le vizualiza în Excel? <i class="fa-solid fa-chevron-down"></i></button>
+                    <div class="faq-content">
+                        <div class="faq-body">Da! Ai la dispoziție butonul "Exportă Raport (CSV)" în panoul bazelor de date. Acesta va genera un fișier standardizat pe care îl poți deschide cu Microsoft Excel sau Google Sheets pentru analize financiare sau de marketing amănunțite.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="section container animate-up">
+        <div class="text-center">
+            <h2 class="section-title">Contactează-ne</h2>
+            <p class="section-subtitle">Ai o afacere cu mai multe locații și dorești un plan Enterprise? Scrie-ne.</p>
+        </div>
+        <div style="max-width: 650px; margin: 0 auto; background: var(--bg-surface); padding: 50px; border-radius: var(--radius-xl); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);">
+            <form id="contact-form">
+                <div class="form-group">
+                    <label class="form-label">Nume complet</label>
+                    <input type="text" class="form-control" required placeholder="Numele tău sau al companiei">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Adresă de Email</label>
+                    <input type="email" class="form-control" required placeholder="email@domeniu.ro">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mesajul tău</label>
+                    <textarea class="form-control" required placeholder="Cum te putem ajuta? Oferă detalii..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 15px;"><i class="fa-solid fa-paper-plane"></i> Trimite Mesajul</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a href="#" class="logo" style="margin-bottom: 25px; display: inline-flex;"><i class="fa-solid fa-star"></i> Recenzii24</a>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">Soluția inteligentă și rapidă pentru afacerile din România care își doresc să crească în clasamentul Google prin puterea recenziilor autentice.</p>
+                    <div class="social-links">
+                        <a href="#" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Legături Utile</h4>
+                    <ul>
+                        <li><a href="#platforma">Control Panel (SaaS)</a></li>
+                        <li><a href="#functionalitati">Funcționalități Cheie</a></li>
+                        <li><a href="#preturi">Prețuri & Abonamente</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal & Suport</h4>
+                    <ul>
+                        <li><a href="#faq">Întrebări Frecvente</a></li>
+                        <li><a href="#contact">Contactează Echipa</a></li>
+                        <li><a href="#">Termeni și Condiții</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © <span id="year-auto"></span> Recenzii24. Toate drepturile rezervate. Produs dezvoltat cu pasiune în România.
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODALE CUSTOM (Inlocuitori pentru Alert si Confirm) -->
+    
+    <!-- Modal Confirmare Stergere -->
+    <div id="modal-delete" class="modal-backdrop">
+        <div class="modal-content">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 4rem; color: var(--danger); margin-bottom: 20px;"></i>
+            <h3 style="font-size: 1.6rem; margin-bottom: 12px; font-weight: 800;">Confirmare Ștergere</h3>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1rem; line-height: 1.5;">Ești sigur? Această acțiune este ireversibilă și va duce la pierderea datelor selectate din memoria locală.</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button class="btn btn-outline" id="btn-cancel-del">Anulează</button>
+                <button class="btn btn-danger" id="btn-confirm-del"><i class="fa-solid fa-trash"></i> Șterge Definitiv</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Info Universal -->
+    <div id="modal-info" class="modal-backdrop">
+        <div class="modal-content">
+            <i id="modal-info-icon" class="fa-solid fa-circle-info" style="font-size: 4rem; color: var(--info); margin-bottom: 20px;"></i>
+            <h3 id="modal-info-title" style="font-size: 1.6rem; margin-bottom: 12px; font-weight: 800;">Informație</h3>
+            <p id="modal-info-body" style="color: var(--text-muted); margin-bottom: 30px; font-size: 1rem; line-height: 1.5;">Mesaj generic.</p>
+            <button class="btn btn-primary" id="btn-close-info" style="min-width: 150px;">Am Înțeles</button>
+        </div>
+    </div>
+
+    <!-- Modal Supabase Cloud -->
+    <div id="modal-cloud" class="modal-backdrop">
+        <div class="modal-content" style="max-width: 500px; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <i class="fa-solid fa-cloud" style="font-size: 2.5rem; color: #8b5cf6;"></i>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);">Conectare Supabase</h3>
+            </div>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem; line-height: 1.5;">Pentru ca scanările să funcționeze <b>pe telefoanele clienților</b> și să le vezi live pe laptop, conectează baza ta de date Supabase. Altfel, va rula în modul Demo Local.</p>
+            
+            <div class="form-group">
+                <label class="form-label">Project URL</label>
+                <input type="text" id="sb-url" class="form-control" placeholder="https://xxxx.supabase.co">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Project API Key (anon/public)</label>
+                <input type="password" id="sb-key" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5c...">
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
+                <button class="btn btn-outline" id="btn-close-cloud">Anulează</button>
+                <button class="btn btn-primary" style="background: #8b5cf6; border: none;" id="btn-save-cloud"><i class="fa-solid fa-link"></i> Salvează & Conectează</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container pentru Toasts -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Buton Inapoi Sus -->
+    <button class="back-to-top" id="back-to-top" style="position: fixed; bottom: 30px; left: 30px; width: 50px; height: 50px; background: var(--primary); color: white; border-radius: 50%; border: none; box-shadow: var(--shadow-lg); cursor: pointer; opacity: 0; visibility: hidden; transition: var(--transition); z-index: 1000; font-size: 1.2rem;"><i class="fa-solid fa-arrow-up"></i></button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            /**
+             * ======================================================================
+             * RECENZII24 - ASYNC CLOUD ARCHITECTURE (Vanilla JS + Supabase)
+             * ======================================================================
+             */
+
+            document.getElementById('year-auto').textContent = new Date().getFullYear();
+            // URL stabil, inclusiv pentru fisiere locale
+            const BASE_URL = window.location.href.split('?')[0].split('#')[0];
+            const DB_KEY = 'r24_enterprise_db_v2'; 
+
+            // --- 1. SISTEM NOTIFICARI & MODALE ---
+            class UIManager {
+                static showToast(msg, type = 'success') {
+                    const t = document.createElement('div');
+                    t.className = `toast ${type}`;
+                    let icon = type === 'error' ? 'exclamation-triangle' : (type === 'info' ? 'info-circle' : 'check-circle');
+                    t.innerHTML = `<i class="fa-solid fa-${icon}" style="font-size: 1.2rem;"></i> <span>${msg}</span>`;
+                    document.getElementById('toast-container').appendChild(t);
+                    
+                    setTimeout(() => t.classList.add('show'), 10);
+                    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
+                }
+                static showInfoModal(title, body, iconClass = 'fa-circle-info', iconColor = 'var(--info)') {
+                    const modal = document.getElementById('modal-info');
+                    document.getElementById('modal-info-title').innerText = title;
+                    document.getElementById('modal-info-body').innerHTML = body; 
+                    const icon = document.getElementById('modal-info-icon');
+                    icon.className = `fa-solid ${iconClass}`;
+                    icon.style.color = iconColor;
+                    modal.classList.add('active');
+                }
+                static hideInfoModal() { document.getElementById('modal-info').classList.remove('active'); }
+            }
+            document.getElementById('btn-close-info').addEventListener('click', UIManager.hideInfoModal);
+
+            // --- 2. GESTIUNE BAZĂ DE DATE (SUPABASE + FALLBACK) ---
+            class Database {
+                static async init() {
+                    const url = localStorage.getItem('sb_url');
+                    const key = localStorage.getItem('sb_key');
+                    if (url && key && window.supabase) {
+                        try {
+                            this.supabase = window.supabase.createClient(url, key);
+                            // Verificăm conexiunea scurt
+                            const { error } = await this.supabase.from('campaigns').select('id').limit(1);
+                            if(error) throw error;
+                            this.isCloud = true;
+                            console.log("Supabase Conectat!");
+                        } catch(e) {
+                            console.error("Supabase init error:", e);
+                            this.isCloud = false;
+                        }
+                    } else {
+                        this.isCloud = false;
+                    }
+                }
+
+                static getLocal() {
+                    const defaultDB = { campaigns: [], contacts: [] };
+                    try {
+                        const stored = localStorage.getItem(DB_KEY);
+                        return stored ? JSON.parse(stored) : defaultDB;
+                    } catch (e) { return defaultDB; }
+                }
+
+                static async get() {
+                    if (this.isCloud) {
+                        try {
+                            const { data: camps } = await this.supabase.from('campaigns').select('*').order('created', {ascending: false});
+                            const { data: conts } = await this.supabase.from('crm').select('*').order('added', {ascending: false});
+                            return { campaigns: camps || [], contacts: conts || [] };
+                        } catch(e) {
+                            return this.getLocal(); // Eroare rețea -> fallback
+                        }
+                    }
+                    return this.getLocal();
+                }
+
+                static async getCampaign(id) {
+                    if (this.isCloud) {
+                        const { data } = await this.supabase.from('campaigns').select('*').eq('id', id).single();
+                        return data;
+                    }
+                    return this.getLocal().campaigns.find(c => c.id === id);
+                }
+
+                static async saveCampaign(camp) {
+                    if (this.isCloud) {
+                        const { error } = await this.supabase.from('campaigns').upsert(camp);
+                        if (error) { console.error("Eroare Baza de date:", error); throw error; }
+                    } else {
+                        let db = this.getLocal();
+                        const idx = db.campaigns.findIndex(c => c.id === camp.id);
+                        if(idx > -1) db.campaigns[idx] = camp; else db.campaigns.unshift(camp);
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    }
+                }
+
+                static async addClickToCampaign(id) {
+                    if (this.isCloud) {
+                        const { data: camp } = await this.supabase.from('campaigns').select('*').eq('id', id).single();
+                        if (camp) {
+                            let clicksArray = camp.clicks || [];
+                            clicksArray.push(Date.now());
+                            await this.supabase.from('campaigns').update({ clicks: clicksArray }).eq('id', id);
+                            return camp;
+                        }
+                        return null;
+                    } else {
+                        let db = this.getLocal();
+                        let camp = db.campaigns.find(c => c.id === id);
+                        if (camp) {
+                            camp.clicks.push(Date.now());
+                            localStorage.setItem(DB_KEY, JSON.stringify(db));
+                            return camp;
+                        }
+                        return null;
+                    }
+                }
+
+                static async deleteCampaign(id) {
+                    if(this.isCloud) await this.supabase.from('campaigns').delete().eq('id', id);
+                    else {
+                        let db = this.getLocal();
+                        db.campaigns = db.campaigns.filter(x => x.id !== id);
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    }
+                }
+                
+                static async saveContact(contact) {
+                    if(this.isCloud) {
+                        const { error } = await this.supabase.from('crm').insert(contact);
+                        if (error) { console.error("Eroare CRM:", error); throw error; }
+                    } else {
+                        let db = this.getLocal();
+                        db.contacts.push(contact);
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    }
+                }
+
+                static async deleteContact(id) {
+                    if(this.isCloud) await this.supabase.from('crm').delete().eq('id', id);
+                    else {
+                        let db = this.getLocal();
+                        db.contacts = db.contacts.filter(x => x.id !== id);
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    }
+                }
+            }
+
+            // Inițializăm Database
+            
+            // --- 3. TRACKING ENGINE & REDIRECT ---
+            // Mutăm verificarea AICI, ca overlay-ul să apară INSTANT!
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectId = urlParams.get('redirect');
+
+            if (redirectId) {
+                const overlay = document.getElementById('redirect-overlay');
+                overlay.style.display = 'flex';
+                document.getElementById('navbar').style.display = 'none'; // Ascundem meniul pentru ecran curat
+            }
+
+            await Database.init();
+
+            if (redirectId) {
+                try {
+                    const camp = await Database.addClickToCampaign(redirectId);
+
+                    if (camp) {
+                        let finalUrl = camp.targetUrl || camp.targeturl;
+                        if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+                        setTimeout(() => { window.location.replace(finalUrl); }, 1500); 
+                        return; 
+                    } else {
+                        document.getElementById('redirect-content').innerHTML = `
+                            <i class="fa-solid fa-circle-xmark" style="font-size: 5rem; color: var(--danger); margin-bottom: 30px;"></i>
+                            <h2 style="font-weight: 800; font-size: 2.5rem; color: var(--text-main);">Eroare Link</h2>
+                            <p style="color: var(--text-muted); font-size: 1.2rem; margin-top: 15px;">Campania a fost ștearsă sau nu există.</p>
+                        `;
+                        setTimeout(() => { window.location.replace(BASE_URL); }, 3000);
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Redirect Error:", err);
+                }
+            }
+
+
+            // --- 4. CLOUD CONFIG MODAL ---
+            const modalCloud = document.getElementById('modal-cloud');
+            document.getElementById('btn-config-cloud').onclick = () => {
+                document.getElementById('sb-url').value = localStorage.getItem('sb_url') || '';
+                document.getElementById('sb-key').value = localStorage.getItem('sb_key') || '';
+                modalCloud.classList.add('active');
+            };
+            document.getElementById('btn-close-cloud').onclick = () => modalCloud.classList.remove('active');
+            document.getElementById('btn-save-cloud').onclick = async () => {
+                const url = document.getElementById('sb-url').value.trim();
+                const key = document.getElementById('sb-key').value.trim();
+                localStorage.setItem('sb_url', url);
+                localStorage.setItem('sb_key', key);
+                
+                const btn = document.getElementById('btn-save-cloud');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificare...';
+                
+                await Database.init();
+                
+                btn.innerHTML = '<i class="fa-solid fa-link"></i> Salvează & Conectează';
+                modalCloud.classList.remove('active');
+                
+                if (Database.isCloud) {
+                    UIManager.showToast('Conectat cu succes la Cloud!', 'success');
+                } else {
+                    UIManager.showToast('Conexiune eșuată. Rulăm Local Demo.', 'info');
+                }
+                await refreshAllDashboards();
+            };
+
+
+            // --- 5. MANAGER INTERFAȚĂ (Theming, Scroll) ---
+            let currentQrCode = null;
+            let currentActiveCampData = null; 
+
+            const htmlEl = document.documentElement;
+            const themeBtn = document.getElementById('theme-toggle');
+            htmlEl.setAttribute('data-theme', localStorage.getItem('r24_theme') || 'light');
+            updateThemeIcon();
+            
+            themeBtn.onclick = () => {
+                const nt = htmlEl.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                htmlEl.setAttribute('data-theme', nt);
+                localStorage.setItem('r24_theme', nt);
+                updateThemeIcon();
+                if(currentActiveCampData) renderLiveQR(currentActiveCampData); 
+            };
+
+            function updateThemeIcon() {
+                themeBtn.innerHTML = htmlEl.getAttribute('data-theme') === 'light' ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+            }
+
+            const backToTop = document.getElementById('back-to-top');
+            window.onscroll = () => {
+                backToTop.style.opacity = window.scrollY > 400 ? '1' : '0';
+                backToTop.style.visibility = window.scrollY > 400 ? 'visible' : 'hidden';
+            };
+            backToTop.onclick = () => window.scrollTo({top:0, behavior: 'smooth'});
+
+            const obs = new IntersectionObserver((e, o) => { 
+                e.forEach(entry => { 
+                    if(entry.isIntersecting) { entry.target.classList.add('visible'); o.unobserve(entry.target); } 
+                }); 
+            });
+            document.querySelectorAll('.animate-up').forEach(el => obs.observe(el));
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const group = e.target.closest('.tabs');
+                    group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const container = group.nextElementSibling;
+                    container.querySelectorAll(':scope > .tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(e.target.dataset.tab).classList.add('active');
+                };
+            });
+
+            // Color Picker Labels
+            document.getElementById('qr-color-dots').oninput = e => document.getElementById('lbl-color-dots').innerText = e.target.value.toUpperCase();
+            document.getElementById('qr-color-bg').oninput = e => document.getElementById('lbl-color-bg').innerText = e.target.value.toUpperCase();
+
+            // QR TEMPLATES LOGIC
+            document.querySelectorAll('#qr-templates-container button').forEach(btn => {
+                btn.onclick = (e) => {
+                    const tpl = e.target.getAttribute('data-tpl');
+                    const cDots = document.getElementById('qr-color-dots');
+                    const cBg = document.getElementById('qr-color-bg');
+                    const sDots = document.getElementById('qr-style-dots');
+                    const sCorners = document.getElementById('qr-style-corners');
+                    
+                    if(tpl === 'modern') { cDots.value = '#2563EB'; cBg.value = '#ffffff'; sDots.value = 'rounded'; sCorners.value = 'extra-rounded'; } 
+                    else if(tpl === 'google') { cDots.value = '#EA4335'; cBg.value = '#ffffff'; sDots.value = 'rounded'; sCorners.value = 'square'; } 
+                    else if(tpl === 'elegant') { cDots.value = '#111827'; cBg.value = '#F3F4F6'; sDots.value = 'classy'; sCorners.value = 'dot'; } 
+                    else if(tpl === 'whatsapp') { cDots.value = '#25D366'; cBg.value = '#ffffff'; sDots.value = 'dots'; sCorners.value = 'extra-rounded'; }
+                    
+                    document.getElementById('lbl-color-dots').innerText = cDots.value.toUpperCase();
+                    document.getElementById('lbl-color-bg').innerText = cBg.value.toUpperCase();
+                    cDots.dispatchEvent(new Event('input')); // Triggers live preview update
+                };
+            });
+
+            document.getElementById('contact-form').onsubmit = (e) => {
+                e.preventDefault(); UIManager.showToast('Mesaj trimis cu succes!', 'success'); e.target.reset();
+            };
+
+            document.querySelectorAll('.faq-header').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const content = btn.nextElementSibling;
+                    const isActive = btn.classList.contains('active');
+                    document.querySelectorAll('.faq-header').forEach(b => {
+                        b.classList.remove('active'); b.nextElementSibling.style.maxHeight = null;
+                    });
+                    if (!isActive) {
+                        btn.classList.add('active'); content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+
+            // --- 6. GENERATOR CAMPANII & LIVE PREVIEW ---
+
+            const campForm = document.getElementById('campaign-form');
+            const hiddenCampId = document.getElementById('camp-id');
+            const btnSubmitCamp = document.getElementById('btn-submit-camp');
+            const btnResetForm = document.getElementById('btn-reset-form');
+
+            campForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const isUpdate = hiddenCampId.value !== "";
+                const id = isUpdate ? hiddenCampId.value : Math.random().toString(36).substr(2, 9);
+                const trackUrl = `${BASE_URL}?redirect=${id}`;
+
+                // Așteptăm să luăm click-urile vechi dacă e update
+                let existingClicks = [];
+                if(isUpdate) {
+                    const c = await Database.getCampaign(id);
+                    if(c) existingClicks = c.clicks || [];
+                }
+
+                const campData = {
+                    id: id,
+                    name: document.getElementById('biz-name').value.trim(),
+                    targetUrl: document.getElementById('biz-url').value.trim(),
+                    trackUrl: trackUrl,
+                    logo: document.getElementById('biz-logo').value.trim(),
+                    design: {
+                        colorDots: document.getElementById('qr-color-dots').value,
+                        colorBg: document.getElementById('qr-color-bg').value,
+                        styleDots: document.getElementById('qr-style-dots').value,
+                        styleCorners: document.getElementById('qr-style-corners').value
+                    },
+                    waMsg: document.getElementById('wa-msg').value,
+                    created: isUpdate ? (await Database.getCampaign(id)).created : Date.now(),
+                    clicks: existingClicks 
+                };
+
+                try {
+                    await Database.saveCampaign(campData);
+                    UIManager.showToast(isUpdate ? 'Campanie actualizată!' : 'Campanie creată!', 'success');
+                    await refreshAllDashboards();
+                    renderLiveQR(campData);
+                    setFormToUpdateMode(campData.id);
+                } catch (err) {
+                    UIManager.showToast('Eroare Cloud! Ai rulat scriptul SQL corect?', 'error');
+                }
+            };
+
+            const designInputs = ['qr-color-dots', 'qr-color-bg', 'qr-style-dots', 'qr-style-corners', 'biz-url', 'biz-logo'];
+            designInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', debounce(() => {
+                    const url = document.getElementById('biz-url').value.trim();
+                    if(url && url.length > 5) {
+                        const tempCamp = {
+                            trackUrl: url,
+                            logo: document.getElementById('biz-logo').value.trim(),
+                            design: {
+                                colorDots: document.getElementById('qr-color-dots').value,
+                                colorBg: document.getElementById('qr-color-bg').value,
+                                styleDots: document.getElementById('qr-style-dots').value,
+                                styleCorners: document.getElementById('qr-style-corners').value
+                            }
+                        };
+                        renderLiveQR(tempCamp);
+                    }
+                }, 300));
+            });
+
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => { clearTimeout(timeout); func(...args); };
+                    clearTimeout(timeout); timeout = setTimeout(later, wait);
+                };
+            }
+
+            function renderLiveQR(camp) {
+                if(!camp || !camp.trackUrl) return;
+                currentActiveCampData = camp;
+                
+                const targetArea = document.getElementById('visual-preview-area');
+                const targetDiv = document.getElementById('qr-canvas-target');
+                const placeholder = document.getElementById('qr-placeholder-text');
+                
+                placeholder.style.display = 'none';
+                targetDiv.style.display = 'block';
+                targetArea.classList.add('has-qr');
+                
+                document.getElementById('btn-dl-qr').disabled = false;
+                document.getElementById('btn-dl-svg').disabled = false;
+
+                targetDiv.innerHTML = ''; 
+
+                const options = {
+                    width: 250, height: 250, type: "canvas", data: camp.trackUrl, image: camp.logo,
+                    dotsOptions: { color: camp.design.colorDots, type: camp.design.styleDots },
+                    backgroundOptions: { color: camp.design.colorBg },
+                    imageOptions: { crossOrigin: "anonymous", margin: 10 },
+                    cornersSquareOptions: { color: camp.design.colorDots, type: camp.design.styleCorners }
+                };
+
+                currentQrCode = new QRCodeStyling(options);
+                currentQrCode.append(targetDiv);
+            }
+
+            document.getElementById('btn-dl-qr').onclick = () => {
+                if(currentQrCode && currentActiveCampData) {
+                    currentQrCode.download({ name: `QR_${currentActiveCampData.name}`, extension: "png" });
+                }
+            };
+            document.getElementById('btn-dl-svg').onclick = () => {
+                if(currentQrCode && currentActiveCampData) {
+                    currentQrCode.download({ name: `QR_${currentActiveCampData.name}`, extension: "svg" });
+                }
+            };
+
+            btnResetForm.onclick = () => {
+                campForm.reset();
+                hiddenCampId.value = "";
+                btnSubmitCamp.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generează Campanie Nouă';
+                btnSubmitCamp.classList.replace('btn-success', 'btn-primary');
+                
+                document.getElementById('visual-preview-area').classList.remove('has-qr');
+                document.getElementById('qr-canvas-target').style.display = 'none';
+                document.getElementById('qr-placeholder-text').style.display = 'block';
+                document.getElementById('btn-dl-qr').disabled = true;
+                document.getElementById('btn-dl-svg').disabled = true;
+                
+                document.getElementById('lbl-color-dots').innerText = '#2563EB';
+                document.getElementById('lbl-color-bg').innerText = '#FFFFFF';
+            };
+
+            function setFormToUpdateMode(id) {
+                hiddenCampId.value = id;
+                btnSubmitCamp.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Actualizează Campania';
+                btnSubmitCamp.classList.replace('btn-primary', 'btn-success');
+            }
+
+
+            // --- 7. DASHBOARD, CRM & CHART RENDERER ---
+
+            window.addEventListener('storage', async (e) => {
+                if (e.key === DB_KEY) { await refreshAllDashboards(); }
+            });
+
+            async function refreshAllDashboards() {
+                const db = await Database.get();
+                
+                const totalCamps = db.campaigns.length;
+                let totalClicks = 0;
+                db.campaigns.forEach(c => totalClicks += (c.clicks ? c.clicks.length : 0));
+                
+                animateValue('stat-total-camps', parseInt(document.getElementById('stat-total-camps').innerText) || 0, totalCamps, 800);
+                animateValue('stat-total-clicks', parseInt(document.getElementById('stat-total-clicks').innerText) || 0, totalClicks, 1000);
+
+                buildAnalyticsChart(db.campaigns);
+
+                const select = document.getElementById('crm-campaign-select');
+                select.innerHTML = '<option value="">Alege campania creată...</option>';
+                db.campaigns.forEach(c => select.add(new Option(c.name, c.id)));
+
+                renderCampaignsList(db.campaigns);
+                renderCRMList(db.contacts, db.campaigns);
+            }
+
+            function animateValue(id, start, end, duration) {
+                if (start === end) return;
+                const obj = document.getElementById(id);
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = Math.floor(progress * (end - start) + start);
+                    if (progress < 1) window.requestAnimationFrame(step);
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            function buildAnalyticsChart(campaigns) {
+                const chart = document.getElementById('activity-chart');
+                chart.innerHTML = ''; 
+                
+                let days = [];
+                let maxClicks = 1; 
+                
+                for(let i=6; i>=0; i--) {
+                    let d = new Date(); d.setDate(d.getDate() - i);
+                    let dateStr = d.toLocaleDateString('ro-RO', {day: 'numeric', month: 'short'});
+                    days.push({ date: dateStr, tsStart: d.setHours(0,0,0,0), tsEnd: d.setHours(23,59,59,999), count: 0 });
+                }
+
+                campaigns.forEach(c => {
+                    if(c.clicks) {
+                        c.clicks.forEach(clickTs => {
+                            let targetDay = days.find(d => clickTs >= d.tsStart && clickTs <= d.tsEnd);
+                            if(targetDay) { 
+                                targetDay.count++; 
+                                if(targetDay.count > maxClicks) maxClicks = targetDay.count; 
+                            }
+                        });
+                    }
+                });
+
+                days.forEach(d => {
+                    let heightPct = (d.count / maxClicks) * 100;
+                    if(heightPct === 0) heightPct = 2; 
+                    
+                    let bar = document.createElement('div');
+                    bar.className = 'chart-bar-group';
+                    bar.innerHTML = `
+                        <div class="chart-tooltip">${d.count} scanări</div>
+                        <div class="chart-bar"><div class="chart-bar-fill" style="height: ${heightPct}%;"></div></div>
+                        <div class="chart-label">${d.date.split(' ')[0]}</div>
+                    `;
+                    chart.appendChild(bar);
+                });
+            }
+
+            function renderCampaignsList(camps) {
+                const list = document.getElementById('campaigns-list');
+                list.innerHTML = camps.length ? '' : '<p style="color: var(--text-muted); padding: 20px; text-align: center;">Nu ai creat nicio campanie încă.</p>';
+                
+                camps.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    
+                    const cleanMsg = c.waMsg ? c.waMsg.replace('[LINK]', c.trackUrl) : '';
+                    const waLink = `https://wa.me/?text=${encodeURIComponent(cleanMsg)}`;
+                    const clicksLen = c.clicks ? c.clicks.length : 0;
+
+                    div.innerHTML = `
+                        <div class="item-main">
+                            <h4>${c.name}</h4>
+                            <div class="item-meta">
+                                <span class="meta-pill highlight" title="Trafic Real"><i class="fa-solid fa-fire"></i> ${clicksLen} Scanări</span>
+                                <span class="meta-pill"><i class="fa-solid fa-calendar"></i> ${new Date(c.created).toLocaleDateString('ro-RO')}</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+                                <i class="fa-solid fa-arrow-turn-up"></i> Redirecționează spre: <a href="${c.targetUrl}" target="_blank" style="text-decoration: underline;">Google Maps</a>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 250px;">
+                            <a href="${c.trackUrl}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-play"></i> Test</a>
+                            <a href="${waLink}" target="_blank" class="btn btn-wa btn-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                            <button class="btn btn-outline btn-sm btn-edit-camp" data-id="${c.id}"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-outline btn-sm btn-del-camp" data-id="${c.id}" style="color: var(--danger); border-color: var(--danger);"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+
+                document.querySelectorAll('.btn-edit-camp').forEach(b => {
+                    b.onclick = async (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        const c = await Database.getCampaign(id);
+                        if(c) {
+                            document.getElementById('biz-name').value = c.name; 
+                            document.getElementById('biz-url').value = c.targetUrl;
+                            document.getElementById('biz-logo').value = c.logo; 
+                            
+                            document.getElementById('qr-color-dots').value = c.design.colorDots;
+                            document.getElementById('lbl-color-dots').innerText = c.design.colorDots.toUpperCase();
+                            document.getElementById('qr-color-bg').value = c.design.colorBg; 
+                            document.getElementById('lbl-color-bg').innerText = c.design.colorBg.toUpperCase();
+                            
+                            document.getElementById('qr-style-dots').value = c.design.styleDots;
+                            document.getElementById('qr-style-corners').value = c.design.styleCorners; 
+                            document.getElementById('wa-msg').value = c.waMsg;
+                            
+                            setFormToUpdateMode(c.id);
+                            renderLiveQR(c);
+                            window.scrollTo({top: document.getElementById('platforma').offsetTop, behavior: 'smooth'});
+                        }
+                    };
+                });
+                
+                document.querySelectorAll('.btn-del-camp').forEach(b => {
+                    b.onclick = (e) => askDelete('camp', e.currentTarget.getAttribute('data-id'));
+                });
+            }
+
+            document.getElementById('crm-form').onsubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    await Database.saveContact({
+                        id: Math.random().toString(36).substr(2,9),
+                        name: document.getElementById('crm-name').value.trim(), 
+                        phone: document.getElementById('crm-phone').value.trim(),
+                        campId: document.getElementById('crm-campaign-select').value, 
+                        added: Date.now()
+                    });
+                    e.target.reset(); 
+                    await refreshAllDashboards(); 
+                    UIManager.showToast('Client adăugat!');
+                } catch(err) {
+                    UIManager.showToast('Eroare la salvare CRM!', 'error');
+                }
+            };
+
+            function renderCRMList(contacts, camps) {
+                const list = document.getElementById('crm-list');
+                list.innerHTML = contacts.length ? '' : '<p style="color: var(--text-muted); padding: 20px; text-align: center;">Niciun client adăugat în CRM.</p>';
+                
+                contacts.forEach(c => {
+                    const camp = camps.find(x => x.id === c.campId);
+                    const campName = camp ? camp.name : '<span style="color: var(--danger)">Campanie Ștearsă</span>';
+                    
+                    let waBtnHtml = '';
+                    if(camp && camp.waMsg) {
+                        const cleanPhone = c.phone.replace(/[^0-9+]/g, '');
+                        const cleanMsg = camp.waMsg.replace('[LINK]', camp.trackUrl);
+                        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(cleanMsg)}`;
+                        waBtnHtml = `<a href="${waLink}" target="_blank" class="btn btn-wa btn-sm"><i class="fa-solid fa-paper-plane"></i> Cere Recenzie</a>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
+                        <div class="item-main">
+                            <h4><i class="fa-solid fa-user-circle" style="color: var(--primary); margin-right: 5px;"></i> ${c.name}</h4>
+                            <div class="item-meta mt-2">
+                                <span class="meta-pill"><i class="fa-solid fa-phone"></i> ${c.phone}</span>
+                                <span class="meta-pill"><i class="fa-solid fa-tag"></i> Sursă: ${campName}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap: 8px;">
+                            ${waBtnHtml}
+                            <button class="btn btn-outline btn-sm btn-del-contact" data-id="${c.id}" style="color: var(--danger); border-color: var(--danger);"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+
+                document.querySelectorAll('.btn-del-contact').forEach(b => {
+                    b.onclick = (e) => askDelete('contact', e.currentTarget.getAttribute('data-id'));
+                });
+            }
+
+            // --- 8. DELETE MANAGER & CSV EXPORT ---
+            const modalDel = document.getElementById('modal-delete');
+            let itemToDelete = { type: null, id: null };
+
+            window.askDelete = (type, id) => { 
+                itemToDelete = {type, id}; 
+                modalDel.classList.add('active'); 
+            };
+            
+            document.getElementById('btn-cancel-del').onclick = () => {
+                modalDel.classList.remove('active');
+                itemToDelete = { type: null, id: null };
+            };
+            
+            document.getElementById('btn-confirm-del').onclick = async () => {
+                if(itemToDelete.type === 'camp') {
+                    await Database.deleteCampaign(itemToDelete.id);
+                    if(hiddenCampId.value === itemToDelete.id) btnResetForm.click();
+                }
+                if(itemToDelete.type === 'contact') {
+                    await Database.deleteContact(itemToDelete.id);
+                }
+                
+                await refreshAllDashboards(); 
+                modalDel.classList.remove('active'); 
+                UIManager.showToast('Înregistrare ștearsă.', 'success');
+            };
+
+            document.getElementById('btn-export-csv').onclick = async () => {
+                const db = await Database.get();
+                if(!db.campaigns.length && !db.contacts.length) {
+                    UIManager.showToast('Nu există date pentru export.', 'error');
+                    return;
+                }
+                
+                let csvContent = "\uFEFF"; 
+                csvContent += "=== CAMPANII QR ===\nNume Campanie,Link Tracking,Link Destinatie Originala,Total Scanari (Click-uri),Data Creare\n";
+                db.campaigns.forEach(c => {
+                    const dateStr = new Date(c.created).toLocaleDateString('ro-RO');
+                    const cLen = c.clicks ? c.clicks.length : 0;
+                    csvContent += `"${c.name}","${c.trackUrl}","${c.targetUrl}",${cLen},"${dateStr}"\n`;
+                });
+
+                csvContent += "\n=== MINI CRM (CLIENTI) ===\nNume Client,Telefon,Sursa Campanie,Data Adaugare\n";
+                db.contacts.forEach(c => {
+                    const camp = db.campaigns.find(x => x.id === c.campId);
+                    const campName = camp ? camp.name : "Stearsa";
+                    const dateStr = new Date(c.added).toLocaleDateString('ro-RO');
+                    csvContent += `"${c.name}","${c.phone}","${campName}","${dateStr}"\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a"); link.setAttribute("href", url);
+                link.setAttribute("download", `Raport_Recenzii24_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                UIManager.showToast('Raport Excel descărcat!', 'success');
+            };
+
+            document.getElementById('search-camps').oninput = (e) => {
+                const term = e.target.value.toLowerCase();
+                document.querySelectorAll('#campaigns-list .list-item').forEach(el => {
+                    const title = el.querySelector('h4').innerText.toLowerCase();
+                    el.style.display = title.includes(term) ? 'flex' : 'none';
+                });
+            };
+
+            // Start up
+            await refreshAllDashboards();
+        });
+    </script>
+</body>
+</html>
